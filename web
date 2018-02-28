@@ -1,0 +1,73 @@
+#!/usr/bin/env python2
+
+import sys
+import inspect
+import requests
+
+from cmd2 import Cmd, make_option, options, set_use_arg_list
+
+import sites
+
+from browser import *
+
+"""
+TODOS
+Switch verifiers to urlparse result stuff (netloc etc)
+Switch from url positionals thing to the string.parsed version
+"""
+
+class Sites(SwappableCmd):
+
+    def __init__(self):
+        SwappableCmd.__init__(self)
+        set_use_arg_list(True)
+
+        self.abbrev = True
+        self.set_prompt("home")
+        self.sites = inspect.getmembers(sites, inspect.ismodule)
+
+        self.instances = {}
+        self.names = []
+
+        for _,m in self.sites:
+            mod = m.new(self.visit)
+
+            self.instances[mod.name] = mod
+            self.names.append(mod.name)
+
+    def do_visit(self, args):
+        mod = self.visit(args)
+        if mod:
+            self.swap(mod,args)
+
+    def do_sites(self, args, opts=None):
+        for i,name in enumerate(self.names):
+            writeln("{}: {}".format(i+1,name))
+
+    def do_site(self, site):
+
+        n = -1
+        mod = self.try_nth_mod(site) or self.instances.get(site, None)
+
+        if mod:
+            self.swap(mod)
+        else:
+            writeln("usage: site <n|site name>")
+
+    def try_nth_mod(self, n):
+        try:
+            n = int(n,0)-1
+            name = self.names[n]
+            return self.instances[name]
+        except:
+            return None
+
+    def visit(self, url):
+        instances = sorted(self.instances.values(), key=lambda x: x.priority, reverse=True)
+        for instance in instances:
+            if instance.valid_url(url):
+                return instance
+
+if __name__ == '__main__':
+    c = Sites()
+    c.run("")
