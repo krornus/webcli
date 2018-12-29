@@ -1,0 +1,9 @@
+[package]
+name = "webcli"
+version = "0.1.0"
+authors = ["Spencer Powell"]
+edition = "2018"
+
+[dependencies]
+# reqwest = "0.9"
+libxml = "0.2"
